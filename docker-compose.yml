@@ -1,28 +1,170 @@
+version: '3.8'
+
 services:
+  # Redis - используем образ для ARM
+  redis:
+    image: redis:7-alpine
+    container_name: 2ch_redis
+    restart: unless-stopped
+    volumes:
+      - redis_data:/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    # Оптимизация для RPi4
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 128M
+
+  # Основное приложение FastAPI
   app:
-    build: .
-    restart: always
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: 2ch_app
+    restart: unless-stopped
     volumes:
       - ./static:/app/static
       - ./templates:/app/templates
       - ./downloads:/app/downloads
+      - ./saync_main.py:/app/saync_main.py
+      - ./thread_downloader.py:/app/thread_downloader.py
     networks:
       - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Оптимизация для RPi4
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
 
+  # API для управления загрузками
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: 2ch_api
+    command: uvicorn api:app --host 0.0.0.0 --port 8001 --workers 2
+    restart: unless-stopped
+    ports:
+      - "8001:8001"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./downloads:/app/downloads
+      - ./api.py:/app/api.py
+      - ./celery_tasks.py:/app/celery_tasks.py
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Оптимизация для RPi4
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+        reservations:
+          memory: 256M
+
+  # Celery Worker для асинхронных задач
+  celery:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: 2ch_celery
+    command: celery -A celery_tasks worker --loglevel=info --concurrency=2 --max-tasks-per-child=100
+    restart: unless-stopped
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+    volumes:
+      - ./downloads:/app/downloads
+      - ./celery_tasks.py:/app/celery_tasks.py
+      - ./thread_downloader.py:/app/thread_downloader.py
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Оптимизация для RPi4 - меньше воркеров
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # NGINX - основной веб-сервер
   nginx:
     image: nginx:alpine
-    restart: always
+    container_name: 2ch_nginx
+    restart: unless-stopped
     ports:
-      - "8088:80"
+      - "80:80"      # Основной веб-интерфейс
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./static:/static
-      - ./downloads:/downloads
-    depends_on:
-      - app
+      - ./static:/static:ro
+      - ./downloads:/downloads:ro
     networks:
       - app-network
+    depends_on:
+      - app
+      - api
+    # Оптимизация для RPi4
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+  # Flower для мониторинга Celery (опционально)
+  flower:
+    image: mher/flower:2.0
+    container_name: 2ch_flower
+    command: celery --broker=redis://redis:6379/0 flower --port=5555 --url_prefix=flower
+    restart: unless-stopped
+    ports:
+      - "5555:5555"
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+      - FLOWER_BASIC_AUTH=admin:password  # Измените на свои данные!
+    networks:
+      - app-network
+    depends_on:
+      redis:
+        condition: service_healthy
+    # Оптимизация для RPi4
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+    profiles:
+      - monitoring  # Запускается только с --profile monitoring
 
 networks:
   app-network:
-    driver: bridge 
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  redis_data:
+    driver: local 
