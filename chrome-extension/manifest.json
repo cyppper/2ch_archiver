@@ -1,0 +1,43 @@
+{
+  "manifest_version": 3,
+  "name": "2ch Thread Downloader",
+  "version": "1.0.0",
+  "description": "Скачивание тредов с 2ch.hk через API",
+  "author": "Your Name",
+  
+  "permissions": [
+    "storage",
+    "notifications",
+    "activeTab"
+  ],
+  
+  "host_permissions": [
+    "https://2ch.hk/*",
+    "http://localhost/*",
+    "http://*/*",
+    "https://*/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["https://2ch.hk/*"],
+      "js": ["content.js"],
+      "css": ["content.css"],
+      "run_at": "document_idle"
+    }
+  ],
+  
+  "options_ui": {
+    "page": "options.html",
+    "open_in_tab": false
+  },
+  
+  "action": {
+    "default_popup": "popup.html"
+  }
+} 

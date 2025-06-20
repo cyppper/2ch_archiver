@@ -1,0 +1,295 @@
+/**
+ * Стили для popup окна расширения
+ */
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+  font-size: 14px;
+  color: #333;
+}
+
+.popup-container {
+  width: 320px;
+  background-color: #fff;
+}
+
+/* Header */
+header {
+  background-color: #4CAF50;
+  color: white;
+  padding: 12px 16px;
+  text-align: center;
+}
+
+header h1 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+/* Main content */
+main {
+  padding: 16px;
+}
+
+/* Status section */
+.status-section {
+  margin-bottom: 16px;
+}
+
+.status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: #ccc;
+  transition: background-color 0.3s;
+}
+
+.status-dot.checking {
+  background-color: #2196F3;
+  animation: pulse 1.5s infinite;
+}
+
+.status-dot.online {
+  background-color: #4CAF50;
+}
+
+.status-dot.offline {
+  background-color: #f44336;
+}
+
+.status-dot.error {
+  background-color: #ff9800;
+}
+
+@keyframes pulse {
+  0% { opacity: 1; }
+  50% { opacity: 0.4; }
+  100% { opacity: 1; }
+}
+
+.status-text {
+  font-size: 13px;
+  color: #666;
+}
+
+/* Quick actions */
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 16px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background-color: #fff;
+  font-size: 14px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.action-btn:hover:not(:disabled) {
+  background-color: #f5f5f5;
+  border-color: #999;
+}
+
+.action-btn:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.action-btn.primary {
+  background-color: #4CAF50;
+  color: white;
+  border-color: #4CAF50;
+}
+
+.action-btn.primary:hover:not(:disabled) {
+  background-color: #45a049;
+  border-color: #45a049;
+}
+
+/* Recent section */
+.recent-section {
+  margin-bottom: 16px;
+}
+
+.recent-section h2 {
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0 0 12px 0;
+  color: #666;
+}
+
+.recent-list {
+  max-height: 150px;
+  overflow-y: auto;
+}
+
+.empty-message {
+  text-align: center;
+  color: #999;
+  font-size: 13px;
+  margin: 20px 0;
+}
+
+.recent-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background-color: #f9f9f9;
+  border-radius: 4px;
+  margin-bottom: 6px;
+  font-size: 13px;
+}
+
+.recent-item:hover {
+  background-color: #f0f0f0;
+}
+
+.recent-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.thread-id {
+  font-weight: 500;
+  color: #333;
+}
+
+.download-time {
+  font-size: 11px;
+  color: #999;
+}
+
+.download-status {
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+.download-status.pending {
+  color: #2196F3;
+}
+
+.download-status.progress {
+  color: #ff9800;
+}
+
+.download-status.success {
+  color: #4CAF50;
+}
+
+.download-status.error {
+  color: #f44336;
+}
+
+/* Footer */
+footer {
+  padding: 12px 16px;
+  border-top: 1px solid #e0e0e0;
+  text-align: center;
+  background-color: #fafafa;
+}
+
+footer a {
+  color: #2196F3;
+  text-decoration: none;
+  font-size: 13px;
+}
+
+footer a:hover {
+  text-decoration: underline;
+}
+
+.separator {
+  color: #ccc;
+  margin: 0 8px;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Dark theme support */
+@media (prefers-color-scheme: dark) {
+  body {
+    background-color: #1e1e1e;
+    color: #e0e0e0;
+  }
+  
+  .popup-container {
+    background-color: #1e1e1e;
+  }
+  
+  header {
+    background-color: #2d5a2f;
+  }
+  
+  .status-indicator {
+    background-color: #2a2a2a;
+  }
+  
+  .action-btn {
+    background-color: #2a2a2a;
+    border-color: #444;
+    color: #e0e0e0;
+  }
+  
+  .action-btn:hover:not(:disabled) {
+    background-color: #333;
+    border-color: #555;
+  }
+  
+  .recent-item {
+    background-color: #2a2a2a;
+  }
+  
+  .recent-item:hover {
+    background-color: #333;
+  }
+  
+  footer {
+    background-color: #252525;
+    border-top-color: #444;
+  }
+} 

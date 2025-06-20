@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Настройки - 2ch Thread Downloader</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>2ch Thread Downloader</h1>
+      <p>Настройки расширения</p>
+    </header>
+
+    <main>
+      <section class="settings-section">
+        <h2>API Сервер</h2>
+        <p class="description">
+          Укажите URL вашего API сервера для загрузки тредов.
+          По умолчанию используется локальный сервер.
+        </p>
+        
+        <div class="form-group">
+          <label for="apiUrl">URL API сервера:</label>
+          <input 
+            type="url" 
+            id="apiUrl" 
+            placeholder="http://localhost/api"
+            pattern="https?://.+"
+            required
+          >
+          <small class="hint">
+            Например: http://localhost/api или https://your-server.com/api
+          </small>
+        </div>
+        
+        <div class="form-group">
+          <button id="testConnection" class="btn btn-secondary">
+            Проверить подключение
+          </button>
+          <div id="testResult" class="test-result"></div>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h2>Уведомления</h2>
+        <p class="description">
+          Настройте, как расширение будет уведомлять вас о статусе загрузок.
+        </p>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="enableNotifications" checked>
+            <span>Показывать уведомления о загрузке</span>
+          </label>
+        </div>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="enableStatusMonitoring" checked>
+            <span>Отслеживать статус загрузки</span>
+          </label>
+          <small class="hint">
+            Расширение будет проверять статус загрузки и уведомлять о завершении
+          </small>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h2>Дополнительно</h2>
+        
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="debugMode">
+            <span>Режим отладки</span>
+          </label>
+          <small class="hint">
+            Включает подробные логи в консоли браузера
+          </small>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button id="saveSettings" class="btn btn-primary">
+          Сохранить настройки
+        </button>
+        <button id="resetSettings" class="btn btn-danger">
+          Сбросить настройки
+        </button>
+      </div>
+
+      <div id="statusMessage" class="status-message"></div>
+    </main>
+
+    <footer>
+      <p>
+        <a href="https://github.com/your-repo" target="_blank">GitHub</a> |
+        <a href="#" id="showHelp">Помощь</a>
+      </p>
+    </footer>
+
+    <!-- Модальное окно помощи -->
+    <div id="helpModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Как использовать расширение</h2>
+        
+        <ol>
+          <li>
+            <strong>Настройте API сервер:</strong><br>
+            Укажите URL вашего сервера для загрузки тредов.
+            Если у вас запущен локальный сервер, используйте <code>http://localhost/api</code>
+          </li>
+          <li>
+            <strong>Перейдите на 2ch.hk:</strong><br>
+            Откройте любой тред на 2ch.hk (например, https://2ch.hk/b/res/123456.html)
+          </li>
+          <li>
+            <strong>Найдите кнопку скачивания:</strong><br>
+            В панели управления тредом появится кнопка "📥 Скачать тред"
+          </li>
+          <li>
+            <strong>Скачайте тред:</strong><br>
+            Нажмите на кнопку, и тред будет отправлен на ваш сервер для загрузки
+          </li>
+        </ol>
+        
+        <h3>Требования к серверу</h3>
+        <p>
+          Ваш API сервер должен поддерживать следующие endpoints:
+        </p>
+        <ul>
+          <li><code>POST /download/{thread_id}</code> - для запуска загрузки</li>
+          <li><code>GET /status/{thread_id}</code> - для проверки статуса</li>
+          <li><code>GET /health</code> - для проверки доступности (опционально)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="options.js"></script>
+</body>
+</html> 

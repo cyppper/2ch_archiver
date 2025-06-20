@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>2ch Thread Downloader</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <header>
+      <h1>2ch Thread Downloader</h1>
+    </header>
+    
+    <main>
+      <!-- Статус API -->
+      <div class="status-section">
+        <div class="status-indicator" id="apiStatus">
+          <span class="status-dot"></span>
+          <span class="status-text">Проверка...</span>
+        </div>
+      </div>
+      
+      <!-- Быстрые действия -->
+      <div class="quick-actions">
+        <button id="openCurrentThread" class="action-btn" disabled>
+          📄 Открыть текущий тред
+        </button>
+        
+        <button id="downloadCurrentThread" class="action-btn primary" disabled>
+          📥 Скачать текущий тред
+        </button>
+      </div>
+      
+      <!-- Последние загрузки -->
+      <div class="recent-section">
+        <h2>Последние загрузки</h2>
+        <div id="recentDownloads" class="recent-list">
+          <p class="empty-message">Нет недавних загрузок</p>
+        </div>
+      </div>
+      
+      <!-- Ссылки -->
+      <footer>
+        <a href="#" id="openOptions">⚙️ Настройки</a>
+        <span class="separator">|</span>
+        <a href="#" id="openHelp">❓ Помощь</a>
+      </footer>
+    </main>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html> 

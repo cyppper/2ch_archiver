@@ -1,0 +1,134 @@
+/**
+ * Стили для кнопки скачивания треда
+ * Адаптированы под дизайн 2ch.hk
+ */
+
+/* Контейнер кнопки */
+.thread-downloader-container {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+/* Основная кнопка скачивания */
+.thread-downloader-btn {
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  border-radius: 3px;
+  padding: 4px 12px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #333;
+  white-space: nowrap;
+}
+
+/* Hover эффект */
+.thread-downloader-btn:hover:not(:disabled) {
+  background-color: #e0e0e0;
+  border-color: #999;
+}
+
+/* Активное состояние */
+.thread-downloader-btn:active:not(:disabled) {
+  background-color: #d0d0d0;
+  transform: translateY(1px);
+}
+
+/* Отключенное состояние */
+.thread-downloader-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Темная тема 2ch */
+body.theme-dark .thread-downloader-btn {
+  background-color: #2d2d2d;
+  border-color: #444;
+  color: #ccc;
+}
+
+body.theme-dark .thread-downloader-btn:hover:not(:disabled) {
+  background-color: #3d3d3d;
+  border-color: #555;
+}
+
+body.theme-dark .thread-downloader-btn:active:not(:disabled) {
+  background-color: #1d1d1d;
+}
+
+/* Уведомление об ошибке */
+.thread-downloader-error {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background-color: #ff4444;
+  color: white;
+  padding: 12px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  z-index: 10000;
+  max-width: 400px;
+  font-size: 14px;
+  animation: slideIn 0.3s ease-out;
+}
+
+/* Анимация появления уведомления */
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* Адаптация под мобильные устройства */
+@media (max-width: 768px) {
+  .thread-downloader-container {
+    display: none; /* Скрываем на мобильных, так как ищем только .desktop панели */
+  }
+  
+  .thread-downloader-error {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+/* Специфичные стили для разных досок */
+.board-b .thread-downloader-btn {
+  /* Можно добавить специфичные стили для /b/ */
+}
+
+.board-po .thread-downloader-btn {
+  /* Стили для /po/ */
+}
+
+/* Индикатор загрузки */
+.thread-downloader-btn[disabled] {
+  position: relative;
+}
+
+.thread-downloader-btn[disabled]::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  margin: auto;
+  border: 2px solid transparent;
+  border-top-color: #666;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  top: 0;
+  bottom: 0;
+  left: 8px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+} 
