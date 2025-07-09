@@ -17,6 +17,58 @@ const elements = {
 let currentTab = null;
 
 /**
+ * Проверка и обновление статуса загрузки
+ */
+async function checkAndUpdateDownloadStatus() {
+  try {
+    const result = await chrome.storage.local.get(['recentDownloads']);
+    let recentDownloads = result.recentDownloads || [];
+    
+    // Получаем настройки API
+    const settings = await chrome.storage.sync.get(['apiUrl']);
+    const apiUrl = settings.apiUrl || 'http://localhost/api';
+    
+    let updated = false;
+    
+    // Проверяем статус для всех загрузок со статусом 'progress'
+    for (let i = 0; i < recentDownloads.length; i++) {
+      const download = recentDownloads[i];
+      
+      // Проверяем только загрузки в процессе
+      if (download.status === 'progress') {
+        try {
+          const statusUrl = `${apiUrl}/status/${download.threadId}`;
+          const response = await fetch(statusUrl);
+          
+          if (response.ok) {
+            const data = await response.json();
+            
+            if (data.state === 'SUCCESS') {
+              recentDownloads[i].status = 'success';
+              updated = true;
+            } else if (data.state === 'FAILURE') {
+              recentDownloads[i].status = 'error';
+              updated = true;
+            }
+          }
+        } catch (error) {
+          console.error(`Ошибка при проверке статуса треда ${download.threadId}:`, error);
+        }
+      }
+    }
+    
+    // Если были обновления, сохраняем и перезагружаем список
+    if (updated) {
+      await chrome.storage.local.set({ recentDownloads });
+      await loadRecentDownloads();
+    }
+    
+  } catch (error) {
+    console.error('Ошибка при проверке статуса загрузок:', error);
+  }
+}
+
+/**
  * Инициализация popup
  */
 async function init() {
@@ -30,11 +82,17 @@ async function init() {
   // Обновляем UI в зависимости от текущей страницы
   updateUIForCurrentTab();
   
+  // Проверяем и обновляем статус загрузок
+  await checkAndUpdateDownloadStatus();
+  
   // Загружаем последние загрузки
   loadRecentDownloads();
   
   // Устанавливаем обработчики событий
   setupEventHandlers();
+  
+  // Запускаем периодическое обновление статуса
+  setInterval(checkAndUpdateDownloadStatus, 10000); // каждые 10 секунд
 }
 
 /**
@@ -126,6 +184,92 @@ function updateUIForCurrentTab() {
 }
 
 /**
+ * Получение первого сообщения треда
+ * @param {string} boardId - ID доски
+ * @param {string} threadId - ID треда
+ * @returns {string} Обрезанный текст первого сообщения
+ */
+async function getThreadFirstMessage(boardId, threadId) {
+  try {
+    const settings = await chrome.storage.sync.get(['apiUrl']);
+    const apiUrl = settings.apiUrl || 'http://localhost/api';
+    
+    // Сначала пробуем получить данные из нашего API (для уже загруженных тредов)
+    try {
+      const response = await fetch(`${apiUrl}/thread/${threadId}`, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'default'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Ищем первое сообщение
+        if (data.posts && data.posts.length > 0) {
+          const firstPost = data.posts[0];
+          let message = firstPost.comment || '';
+          
+          // Убираем HTML теги
+          message = message.replace(/<[^>]*>/g, '');
+          
+          // Убираем лишние пробелы и переносы строк
+          message = message.replace(/\s+/g, ' ').trim();
+          
+          // Обрезаем до 50 символов
+          if (message.length > 50) {
+            message = message.substring(0, 47) + '...';
+          }
+          
+          return message;
+        }
+      }
+    } catch (localError) {
+      console.log(`Тред ${threadId} не найден в локальном API, пробуем получить с 2ch.hk`);
+    }
+    
+    // Если не получилось из нашего API, пробуем получить с 2ch.hk
+    try {
+      const response = await fetch(`https://2ch.hk/${boardId}/res/${threadId}.json`, {
+        method: 'GET',
+        mode: 'cors',
+        cache: 'default'
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Ищем первое сообщение в массиве threads->posts
+        if (data.threads && data.threads.length > 0 && data.threads[0].posts && data.threads[0].posts.length > 0) {
+          const firstPost = data.threads[0].posts[0];
+          let message = firstPost.comment || '';
+          
+          // Убираем HTML теги
+          message = message.replace(/<[^>]*>/g, '');
+          
+          // Убираем лишние пробелы и переносы строк
+          message = message.replace(/\s+/g, ' ').trim();
+          
+          // Обрезаем до 50 символов
+          if (message.length > 50) {
+            message = message.substring(0, 47) + '...';
+          }
+          
+          return message;
+        }
+      }
+    } catch (remoteError) {
+      console.log(`Не удалось получить данные треда ${threadId} с 2ch.hk:`, remoteError);
+    }
+    
+    return '';
+  } catch (error) {
+    console.error(`Ошибка при получении первого сообщения треда ${threadId}:`, error);
+    return '';
+  }
+}
+
+/**
  * Загрузка последних загрузок
  */
 async function loadRecentDownloads() {
@@ -138,21 +282,62 @@ async function loadRecentDownloads() {
       return;
     }
     
-    // Показываем последние 5 загрузок
+    // Создаем HTML с заглушками для сообщений
     const downloadsHtml = recentDownloads
       .slice(0, 5)
-      .map(download => `
-        <div class="recent-item">
+      .map(download => {
+        const messageText = download.firstMessage ? ` - ${download.firstMessage}` : '';
+        return `
+        <div class="recent-item clickable" data-board-id="${download.boardId}" data-thread-id="${download.threadId}">
           <div class="recent-info">
-            <span class="thread-id">/${download.boardId}/${download.threadId}</span>
+            <span class="thread-id-with-message">
+              <span class="thread-id">/${download.boardId}/${download.threadId}</span>
+              <span class="thread-message loaded">${messageText}</span>
+            </span>
             <span class="download-time">${formatTime(download.timestamp)}</span>
           </div>
           <span class="download-status ${download.status}">${getStatusText(download.status)}</span>
         </div>
-      `)
+      `;
+      })
       .join('');
     
     elements.recentDownloads.innerHTML = downloadsHtml;
+    
+    // Добавляем обработчики клика для элементов тредов
+    setupRecentItemsClickHandlers();
+    
+    // Загружаем первые сообщения только для тех тредов, у которых их нет
+    recentDownloads.slice(0, 5).forEach(async (download, index) => {
+      if (!download.firstMessage) {
+        const messageElement = document.querySelector(`[data-thread-id="${download.threadId}"] .thread-message`);
+        if (messageElement) {
+          messageElement.textContent = 'Загрузка...';
+          messageElement.classList.remove('loaded');
+          
+          const firstMessage = await getThreadFirstMessage(download.boardId, download.threadId);
+          if (firstMessage) {
+            messageElement.textContent = ` - ${firstMessage}`;
+            messageElement.classList.add('loaded');
+            
+            // Обновляем кэш
+            const result = await chrome.storage.local.get(['recentDownloads']);
+            let cachedDownloads = result.recentDownloads || [];
+            const downloadIndex = cachedDownloads.findIndex(d => 
+              d.threadId === download.threadId && d.boardId === download.boardId
+            );
+            if (downloadIndex !== -1) {
+              cachedDownloads[downloadIndex].firstMessage = firstMessage;
+              await chrome.storage.local.set({ recentDownloads: cachedDownloads });
+            }
+          } else {
+            messageElement.textContent = '';
+            messageElement.classList.add('loaded');
+          }
+        }
+      }
+    });
+    
   } catch (error) {
     console.error('Ошибка при загрузке истории:', error);
   }
@@ -241,7 +426,7 @@ function setupEventHandlers() {
           elements.downloadCurrentThread.textContent = '✅ Отправлено';
           
           // Сохраняем в историю
-          await saveToHistory(boardId, threadId, 'progress');
+          await saveToHistory(boardId, threadId, 'pending');
           
           // Обновляем список
           await loadRecentDownloads();
@@ -287,12 +472,16 @@ async function saveToHistory(boardId, threadId, status) {
     const result = await chrome.storage.local.get(['recentDownloads']);
     let recentDownloads = result.recentDownloads || [];
     
+    // Получаем первое сообщение треда для кэширования
+    const firstMessage = await getThreadFirstMessage(boardId, threadId);
+    
     // Добавляем новую запись в начало
     recentDownloads.unshift({
       boardId: boardId,
       threadId: threadId,
       status: status,
-      timestamp: Date.now()
+      timestamp: Date.now(),
+      firstMessage: firstMessage || '' // Кэшируем первое сообщение
     });
     
     // Оставляем только последние 20 записей
@@ -302,6 +491,28 @@ async function saveToHistory(boardId, threadId, status) {
   } catch (error) {
     console.error('Ошибка при сохранении в историю:', error);
   }
+}
+
+/**
+ * Установка обработчиков кликов для элементов последних загрузок
+ */
+function setupRecentItemsClickHandlers() {
+  document.querySelectorAll('.recent-item.clickable').forEach(item => {
+    item.addEventListener('click', async () => {
+      const boardId = item.dataset.boardId;
+      const threadId = item.dataset.threadId;
+      
+      // Получаем URL нашего сервера
+      const settings = await chrome.storage.sync.get(['apiUrl']);
+      const apiUrl = settings.apiUrl || 'http://localhost/api';
+      const serverUrl = apiUrl.replace('/api', '');
+      
+      // Открываем тред на нашем сервере
+      chrome.tabs.create({
+        url: `${serverUrl}/b/res/${threadId}.html`
+      });
+    });
+  });
 }
 
 // Запускаем инициализацию

@@ -5595,8 +5595,8 @@ Stage('Дисклеймеры досок', 'board_disclaimers', Stage.DOMREADY, 
     }
 });
 Stage('Плашка',                      'abuplashque',    Stage.DOMREADY,     function(){
-    const active = true;
-    const activeMob = true;
+    const active = false;
+    const activeMob = false;
     //const mob = window.matchMedia("only screen and (max-width: 280px)").matches;
     const mob = CFG.ISMOBILE480;
     if(!active && !mob) return;

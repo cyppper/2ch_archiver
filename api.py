@@ -198,6 +198,50 @@ async def get_download_status(thread_id: str):
 
 
 @app.get(
+    "/thread/{thread_id}",
+    responses={
+        200: {"description": "Информация о треде получена"},
+        404: {"model": ErrorResponse, "description": "Тред не найден"},
+        400: {"model": ErrorResponse, "description": "Неверный формат thread_id"}
+    },
+    summary="Получить информацию о треде",
+    description="Возвращает данные треда из локального файла (если тред был загружен)"
+)
+async def get_thread_info(thread_id: str):
+    """
+    Получает информацию о треде из локального файла.
+    
+    - **thread_id**: ID треда на 2ch.hk (только цифры)
+    """
+    # Валидация thread_id
+    if not thread_id.isdigit():
+        raise HTTPException(
+            status_code=400,
+            detail="thread_id должен содержать только цифры"
+        )
+    
+    # Проверяем существование файла треда
+    thread_path = Path(f'downloads/{thread_id}/{thread_id}.json')
+    if not thread_path.exists():
+        raise HTTPException(
+            status_code=404,
+            detail=f"Тред {thread_id} не найден. Возможно он еще не был загружен."
+        )
+    
+    try:
+        import json
+        with open(thread_path, 'r', encoding='utf-8') as f:
+            thread_data = json.load(f)
+        
+        return thread_data
+    except Exception as e:
+        raise HTTPException(
+            status_code=500,
+            detail=f"Ошибка при чтении файла треда: {str(e)}"
+        )
+
+
+@app.get(
     "/",
     summary="Корневой эндпоинт",
     description="Возвращает информацию об API"
@@ -209,7 +253,9 @@ async def root():
         "version": "1.0.0",
         "endpoints": {
             "download": "POST /download/{thread_id}",
-            "status": "GET /status/{thread_id}"
+            "status": "GET /status/{thread_id}",
+            "thread": "GET /thread/{thread_id}",
+            "health": "GET /health"
         },
         "docs": "/docs",
         "redoc": "/redoc"

@@ -172,15 +172,51 @@ main {
   background-color: #f0f0f0;
 }
 
+.recent-item.clickable {
+  cursor: pointer;
+  transition: background-color 0.2s, transform 0.1s;
+}
+
+.recent-item.clickable:hover {
+  background-color: #e8f5e8;
+  transform: translateY(-1px);
+}
+
+.recent-item.clickable:active {
+  transform: translateY(0);
+}
+
 .recent-info {
   display: flex;
   flex-direction: column;
   gap: 2px;
+  flex: 1;
+  min-width: 0; /* Позволяет элементу сжиматься */
+}
+
+.thread-id-with-message {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .thread-id {
   font-weight: 500;
   color: #333;
+}
+
+.thread-message {
+  font-size: 12px;
+  color: #666;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+  opacity: 0.7;
+}
+
+.thread-message.loaded {
+  opacity: 1;
 }
 
 .download-time {
@@ -286,6 +322,18 @@ footer a:hover {
   
   .recent-item:hover {
     background-color: #333;
+  }
+  
+  .recent-item.clickable:hover {
+    background-color: #2d5a2f;
+  }
+  
+  .thread-id {
+    color: white;
+  }
+  
+  .thread-message {
+    color: #ccc;
   }
   
   footer {

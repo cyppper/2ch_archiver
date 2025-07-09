@@ -64,7 +64,7 @@ async function handleThreadDownload(threadId, boardId) {
     );
     
     // Начинаем мониторинг статуса
-    startStatusMonitoring(threadId, apiUrl);
+    startStatusMonitoring(threadId, boardId, apiUrl);
     
     return data;
     
@@ -83,14 +83,43 @@ async function handleThreadDownload(threadId, boardId) {
 }
 
 /**
+ * Обновление статуса загрузки в локальном хранилище
+ * @param {string} threadId - ID треда
+ * @param {string} boardId - ID доски
+ * @param {string} status - Новый статус
+ */
+async function updateDownloadStatus(threadId, boardId, status) {
+  try {
+    const result = await chrome.storage.local.get(['recentDownloads']);
+    let recentDownloads = result.recentDownloads || [];
+    
+    // Находим запись с данным тредом и обновляем статус
+    const index = recentDownloads.findIndex(download => 
+      download.threadId === threadId && download.boardId === boardId
+    );
+    
+    if (index !== -1) {
+      recentDownloads[index].status = status;
+      await chrome.storage.local.set({ recentDownloads });
+    }
+  } catch (error) {
+    console.error('Ошибка при обновлении статуса:', error);
+  }
+}
+
+/**
  * Мониторинг статуса загрузки
  * @param {string} threadId - ID треда
+ * @param {string} boardId - ID доски
  * @param {string} apiUrl - URL API
  */
-async function startStatusMonitoring(threadId, apiUrl) {
+async function startStatusMonitoring(threadId, boardId, apiUrl) {
   const statusUrl = `${apiUrl}/status/${threadId}`;
   let attempts = 0;
   const maxAttempts = 60; // Максимум 5 минут (60 * 5 сек)
+  
+  // Устанавливаем статус в 'progress' при начале мониторинга
+  await updateDownloadStatus(threadId, boardId, 'progress');
   
   const checkStatus = async () => {
     try {
@@ -107,6 +136,8 @@ async function startStatusMonitoring(threadId, apiUrl) {
           `Тред ${threadId} успешно загружен! Файлов: ${data.stats?.total || 0}`,
           'success'
         );
+        // Обновляем статус в хранилище
+        await updateDownloadStatus(threadId, boardId, 'success');
         return;
       }
       
@@ -116,6 +147,8 @@ async function startStatusMonitoring(threadId, apiUrl) {
           `Загрузка треда ${threadId} завершилась с ошибкой: ${data.error || 'Неизвестная ошибка'}`,
           'error'
         );
+        // Обновляем статус в хранилище
+        await updateDownloadStatus(threadId, boardId, 'error');
         return;
       }
       
@@ -127,6 +160,8 @@ async function startStatusMonitoring(threadId, apiUrl) {
       
     } catch (error) {
       console.error('Ошибка при проверке статуса:', error);
+      // В случае ошибки проверки статуса, устанавливаем статус ошибки
+      await updateDownloadStatus(threadId, boardId, 'error');
     }
   };
   
