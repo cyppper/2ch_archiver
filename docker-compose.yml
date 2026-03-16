@@ -38,7 +38,6 @@ services:
       - ./templates:/app/templates
       - ./downloads:/app/downloads
       - ./saync_main.py:/app/saync_main.py
-      - ./thread_downloader.py:/app/thread_downloader.py
     networks:
       - app-network
     depends_on:
@@ -105,7 +104,6 @@ services:
     volumes:
       - ./downloads:/app/downloads
       - ./celery_tasks.py:/app/celery_tasks.py
-      - ./thread_downloader.py:/app/thread_downloader.py
     networks:
       - app-network
     depends_on:
@@ -148,36 +146,6 @@ services:
       options:
         max-size: "10m"
         max-file: "3"
-
-  # Flower для мониторинга Celery (опционально)
-  flower:
-    image: mher/flower:2.0
-    container_name: 2ch_flower
-    command: celery --broker=redis://redis:6379/0 flower --port=5555 --url_prefix=flower
-    restart: unless-stopped
-    ports:
-      - "5555:5555"
-    environment:
-      - CELERY_BROKER_URL=redis://redis:6379/0
-      - CELERY_RESULT_BACKEND=redis://redis:6379/0
-      - FLOWER_BASIC_AUTH=admin:password  # Измените на свои данные!
-    networks:
-      - app-network
-    depends_on:
-      redis:
-        condition: service_healthy
-    # Ограничения ресурсов для Docker Compose
-    mem_limit: 256m
-    mem_reservation: 128m
-    cpus: 0.5
-    # Настройки логирования
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-    profiles:
-      - monitoring  # Запускается только с --profile monitoring
 
 networks:
   app-network:

@@ -1,8 +1,9 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from typing import Optional, Dict, Any
 import os
+import json
 from pathlib import Path
 from datetime import datetime
 
@@ -229,7 +230,6 @@ async def get_thread_info(thread_id: str):
         )
     
     try:
-        import json
         with open(thread_path, 'r', encoding='utf-8') as f:
             thread_data = json.load(f)
         

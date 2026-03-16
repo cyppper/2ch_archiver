@@ -1,7 +1,7 @@
 import os
 import json
 import asyncio
-from celery import Celery, Task
+from celery import Celery
 from celery.result import AsyncResult
 from pathlib import Path
 import aiohttp
@@ -40,16 +40,6 @@ headers = {
     'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 }
 
-
-class CallbackTask(Task):
-    """Задача с поддержкой обновления прогресса"""
-    def on_success(self, retval, task_id, args, kwargs):
-        """Успешное завершение"""
-        pass
-    
-    def on_failure(self, exc, task_id, args, kwargs, einfo):
-        """Обработка ошибок"""
-        pass
 
 
 async def fetch_and_save_json(session, thread_id, save_dir):
@@ -224,7 +214,7 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
     return result
 
 
-@celery_app.task(bind=True, base=CallbackTask, name='download_thread')
+@celery_app.task(bind=True, name='download_thread')
 def download_thread(self, thread_id: str) -> Dict[str, Any]:
     """Celery задача для загрузки треда"""
     # Запускаем асинхронную функцию в синхронном контексте

@@ -4,9 +4,8 @@ import random
 import json
 
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 app = FastAPI()
@@ -32,6 +31,11 @@ def get_random_gif(static_folder: str = "static") -> str:
     chosen = random.choice(gifs)
     # возвращаем URL, соответствующий mounted StaticFiles
     return f"/static/{chosen}"
+
+
+@app.get("/")
+async def root():
+    return RedirectResponse(url="/b/catalog.html")
 
 
 @app.get("/b/res/{thread_id}.html", response_class=HTMLResponse)

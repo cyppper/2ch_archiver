@@ -63,14 +63,6 @@ start_all() {
     show_status
 }
 
-# Запуск с мониторингом
-start_with_monitoring() {
-    log "Запуск всех сервисов с мониторингом..."
-    docker-compose --profile monitoring up -d
-    log "Все сервисы запущены включая Flower"
-    show_status
-}
-
 # Остановка всех сервисов
 stop_all() {
     log "Остановка всех сервисов..."
@@ -94,9 +86,6 @@ show_status() {
     echo "  - Основной сайт: http://localhost"
     echo "  - API документация: http://localhost/api/docs"
     echo "  - API endpoints: http://localhost/api/"
-    if docker-compose ps | grep -q "flower.*Up"; then
-        echo "  - Flower (мониторинг): http://localhost/flower/"
-    fi
 }
 
 # Просмотр логов
@@ -165,13 +154,6 @@ case "$1" in
         create_directories
         start_all
         ;;
-    start-monitoring)
-        check_architecture
-        check_docker
-        check_memory
-        create_directories
-        start_with_monitoring
-        ;;
     stop)
         stop_all
         ;;
@@ -199,11 +181,10 @@ case "$1" in
     *)
         echo "2ch Indexer Manager для Raspberry Pi 4"
         echo ""
-        echo "Использование: $0 {start|start-monitoring|stop|restart|status|logs|download|update|cleanup|memory}"
+        echo "Использование: $0 {start|stop|restart|status|logs|download|update|cleanup|memory}"
         echo ""
         echo "Команды:"
         echo "  start            - Запустить все основные сервисы"
-        echo "  start-monitoring - Запустить все сервисы включая Flower"
         echo "  stop             - Остановить все сервисы"
         echo "  restart          - Перезапустить все сервисы"
         echo "  status           - Показать статус сервисов"
