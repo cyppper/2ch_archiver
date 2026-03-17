@@ -90,8 +90,8 @@ async def start_download(thread_id: str, body: Optional[DownloadRequest] = None)
         pass
     
     # Определяем base_url по source_host из тела запроса
-    source_host = body.source_host if body and body.source_host else '2ch.hk'
-    base_url = f'https://{source_host}' if source_host.startswith('2ch.') else 'https://2ch.hk'
+    source_host = body.source_host if body and body.source_host else '2ch.org'
+    base_url = f'https://{source_host}' if source_host.startswith('2ch.') else 'https://2ch.org'
 
     # Запускаем задачу
     task = download_thread.delay(thread_id, base_url)

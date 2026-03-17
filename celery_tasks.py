@@ -215,7 +215,7 @@ async def download_thread_async(thread_id: str, task, base_url: str) -> Dict[str
 
 
 @celery_app.task(bind=True, name='download_thread')
-def download_thread(self, thread_id: str, base_url: str = 'https://2ch.hk') -> Dict[str, Any]:
+def download_thread(self, thread_id: str, base_url: str = 'https://2ch.org') -> Dict[str, Any]:
     """Celery задача для загрузки треда"""
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)

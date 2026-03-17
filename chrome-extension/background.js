@@ -47,7 +47,7 @@ async function handleThreadDownload(threadId, boardId, sourceHost) {
       body: JSON.stringify({
         board: boardId,
         thread_id: threadId,
-        source_host: sourceHost || '2ch.hk'
+        source_host: sourceHost || '2ch.org'
       })
     });
     
