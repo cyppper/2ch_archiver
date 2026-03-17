@@ -13,8 +13,6 @@ from typing import Dict, Any
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
-BASE_URLS = ['https://2ch.hk', 'https://2ch.org']
-
 # Настройка Celery
 celery_app = Celery(
     'thread_downloader',
@@ -44,20 +42,12 @@ headers = {
 
 
 
-async def fetch_and_save_json(session, thread_id, save_dir):
+async def fetch_and_save_json(session, thread_id, save_dir, base_url):
     """Загрузка и сохранение JSON треда"""
-    last_exc = None
-    for base in BASE_URLS:
-        try:
-            url = f'{base}/b/res/{thread_id}.json'
-            async with session.get(url, headers=headers) as resp:
-                resp.raise_for_status()
-                data_text = await resp.text()
-            break
-        except Exception as e:
-            last_exc = e
-    else:
-        raise last_exc
+    url = f'{base_url}/b/res/{thread_id}.json'
+    async with session.get(url, headers=headers) as resp:
+        resp.raise_for_status()
+        data_text = await resp.text()
 
     json_path = save_dir / f"{thread_id}.json"
     async with aiofiles.open(json_path, 'w', encoding='utf-8') as f:
@@ -89,7 +79,7 @@ async def handle_download(session, url, dest_path, is_original, sem, stats, fail
             failures.append((url, dest_path, is_original))
 
 
-async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
+async def download_thread_async(thread_id: str, task, base_url: str) -> Dict[str, Any]:
     """Асинхронная функция загрузки треда"""
     base_dir = Path(f'downloads/{thread_id}')
     thumb_dir = base_dir / 'thumb'
@@ -112,7 +102,7 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
                 meta={'status': 'downloading_json', 'progress': 5}
             )
             
-            data = await fetch_and_save_json(session, thread_id, base_dir)
+            data = await fetch_and_save_json(session, thread_id, base_dir, base_url)
             threads = data.get('threads', [])
             posts = threads[0].get('posts', []) if threads else []
 
@@ -127,7 +117,7 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
                     if not path:
                         continue
                     
-                    url_full = BASE_URLS[0] + path
+                    url_full = base_url + path
                     fname = Path(path).name
                     dest = base_dir / fname
                     ext = Path(fname).suffix.lower()
@@ -142,7 +132,7 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
                     tasks_info.append((url_full, str(dest), True))
 
                     if thumb:
-                        url_thumb = BASE_URLS[0] + thumb
+                        url_thumb = base_url + thumb
                         fname_thumb = Path(thumb).name
                         dest_thumb = thumb_dir / fname_thumb
                         tasks_info.append((url_thumb, str(dest_thumb), False))
@@ -225,13 +215,12 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
 
 
 @celery_app.task(bind=True, name='download_thread')
-def download_thread(self, thread_id: str) -> Dict[str, Any]:
+def download_thread(self, thread_id: str, base_url: str = 'https://2ch.hk') -> Dict[str, Any]:
     """Celery задача для загрузки треда"""
-    # Запускаем асинхронную функцию в синхронном контексте
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
     try:
-        result = loop.run_until_complete(download_thread_async(thread_id, self))
+        result = loop.run_until_complete(download_thread_async(thread_id, self, base_url))
         return result
     finally:
         loop.close()

@@ -136,7 +136,8 @@ async function handleDownloadClick(event) {
     const response = await chrome.runtime.sendMessage({
       action: 'downloadThread',
       threadId: threadInfo.threadId,
-      boardId: threadInfo.boardId
+      boardId: threadInfo.boardId,
+      sourceHost: window.location.hostname
     });
     
     if (response.success) {

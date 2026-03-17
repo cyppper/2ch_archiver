@@ -17,7 +17,8 @@ app = FastAPI(
 
 # Pydantic модели
 class DownloadRequest(BaseModel):
-    thread_id: str = Field(..., description="ID треда для загрузки", example="123456")
+    thread_id: Optional[str] = Field(None, description="ID треда для загрузки", example="123456")
+    source_host: Optional[str] = Field(None, description="Домен источника (2ch.hk или 2ch.org)")
 
 class DownloadResponse(BaseModel):
     task_id: str = Field(..., description="ID задачи Celery")
@@ -57,7 +58,7 @@ thread_tasks: Dict[str, str] = {}
     summary="Запустить загрузку треда",
     description="Запускает асинхронную задачу загрузки треда через Celery"
 )
-async def start_download(thread_id: str):
+async def start_download(thread_id: str, body: Optional[DownloadRequest] = None):
     """
     Запускает задачу загрузки треда.
     
@@ -88,8 +89,12 @@ async def start_download(thread_id: str):
         # Для примера разрешим перезагрузку
         pass
     
+    # Определяем base_url по source_host из тела запроса
+    source_host = body.source_host if body and body.source_host else '2ch.hk'
+    base_url = f'https://{source_host}' if source_host.startswith('2ch.') else 'https://2ch.hk'
+
     # Запускаем задачу
-    task = download_thread.delay(thread_id)
+    task = download_thread.delay(thread_id, base_url)
     thread_tasks[thread_id] = task.id
     
     return DownloadResponse(

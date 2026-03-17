@@ -6,7 +6,7 @@
 // Слушаем сообщения от content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'downloadThread') {
-    handleThreadDownload(request.threadId, request.boardId)
+    handleThreadDownload(request.threadId, request.boardId, request.sourceHost)
       .then(result => sendResponse({ success: true, data: result }))
       .catch(error => sendResponse({ success: false, error: error.message }));
     
@@ -27,7 +27,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
  * @param {string} threadId - ID треда для загрузки
  * @param {string} boardId - ID доски (например, 'b')
  */
-async function handleThreadDownload(threadId, boardId) {
+async function handleThreadDownload(threadId, boardId, sourceHost) {
   try {
     // Получаем URL API из настроек
     const settings = await chrome.storage.sync.get(['apiUrl']);
@@ -46,7 +46,8 @@ async function handleThreadDownload(threadId, boardId) {
       },
       body: JSON.stringify({
         board: boardId,
-        thread_id: threadId
+        thread_id: threadId,
+        source_host: sourceHost || '2ch.hk'
       })
     });
     
