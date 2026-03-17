@@ -159,17 +159,17 @@ function updateApiStatus(status) {
 function updateUIForCurrentTab() {
   if (!currentTab) return;
   
-  const is2chThread = currentTab.url && 
-                     currentTab.url.includes('2ch.hk') && 
+  const is2chThread = currentTab.url &&
+                     (currentTab.url.includes('2ch.hk') || currentTab.url.includes('2ch.org')) &&
                      currentTab.url.includes('/res/');
-  
+
   if (is2chThread) {
     // Активируем кнопки для треда 2ch
     elements.openCurrentThread.disabled = false;
     elements.downloadCurrentThread.disabled = false;
-    
+
     // Извлекаем информацию о треде из URL
-    const match = currentTab.url.match(/2ch\.hk\/([^\/]+)\/res\/(\d+)/);
+    const match = currentTab.url.match(/2ch\.[a-z]+\/([^\/]+)\/res\/(\d+)/);
     if (match) {
       const boardId = match[1];
       const threadId = match[2];
@@ -385,28 +385,28 @@ function setupEventHandlers() {
   elements.openCurrentThread.addEventListener('click', async () => {
     if (!currentTab) return;
     
-    const match = currentTab.url.match(/2ch\.hk\/([^\/]+)\/res\/(\d+)/);
+    const match = currentTab.url.match(/2ch\.[a-z]+\/([^\/]+)\/res\/(\d+)/);
     if (match) {
       const boardId = match[1];
       const threadId = match[2];
-      
+
       // Получаем URL нашего сервера
       const settings = await chrome.storage.sync.get(['apiUrl']);
       const apiUrl = settings.apiUrl || 'http://localhost/api';
       const serverUrl = apiUrl.replace('/api', '');
-      
+
       // Открываем тред на нашем сервере
       chrome.tabs.create({
         url: `${serverUrl}/b/res/${threadId}.html`
       });
     }
   });
-  
+
   // Скачать текущий тред
   elements.downloadCurrentThread.addEventListener('click', async () => {
     if (!currentTab) return;
-    
-    const match = currentTab.url.match(/2ch\.hk\/([^\/]+)\/res\/(\d+)/);
+
+    const match = currentTab.url.match(/2ch\.[a-z]+\/([^\/]+)\/res\/(\d+)/);
     if (match) {
       const boardId = match[1];
       const threadId = match[2];
