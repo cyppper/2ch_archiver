@@ -13,6 +13,8 @@ from typing import Dict, Any
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'redis://localhost:6379/0')
 
+BASE_URLS = ['https://2ch.hk', 'https://2ch.org']
+
 # Настройка Celery
 celery_app = Celery(
     'thread_downloader',
@@ -44,15 +46,23 @@ headers = {
 
 async def fetch_and_save_json(session, thread_id, save_dir):
     """Загрузка и сохранение JSON треда"""
-    url = f'https://2ch.hk/b/res/{thread_id}.json'
-    async with session.get(url, headers=headers) as resp:
-        resp.raise_for_status()
-        data_text = await resp.text()
+    last_exc = None
+    for base in BASE_URLS:
+        try:
+            url = f'{base}/b/res/{thread_id}.json'
+            async with session.get(url, headers=headers) as resp:
+                resp.raise_for_status()
+                data_text = await resp.text()
+            break
+        except Exception as e:
+            last_exc = e
+    else:
+        raise last_exc
 
     json_path = save_dir / f"{thread_id}.json"
     async with aiofiles.open(json_path, 'w', encoding='utf-8') as f:
         await f.write(data_text)
-    
+
     return json.loads(data_text)
 
 
@@ -117,7 +127,7 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
                     if not path:
                         continue
                     
-                    url_full = 'https://2ch.hk' + path
+                    url_full = BASE_URLS[0] + path
                     fname = Path(path).name
                     dest = base_dir / fname
                     ext = Path(fname).suffix.lower()
@@ -132,7 +142,7 @@ async def download_thread_async(thread_id: str, task) -> Dict[str, Any]:
                     tasks_info.append((url_full, str(dest), True))
 
                     if thumb:
-                        url_thumb = 'https://2ch.hk' + thumb
+                        url_thumb = BASE_URLS[0] + thumb
                         fname_thumb = Path(thumb).name
                         dest_thumb = thumb_dir / fname_thumb
                         tasks_info.append((url_thumb, str(dest_thumb), False))

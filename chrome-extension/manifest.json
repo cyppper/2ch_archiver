@@ -13,6 +13,7 @@
   
   "host_permissions": [
     "https://2ch.hk/*",
+    "https://2ch.org/*",
     "http://localhost/*",
     "http://*/*",
     "https://*/*"
@@ -25,7 +26,7 @@
   
   "content_scripts": [
     {
-      "matches": ["https://2ch.hk/*"],
+      "matches": ["https://2ch.hk/*", "https://2ch.org/*"],
       "js": ["content.js"],
       "css": ["content.css"],
       "run_at": "document_idle"
